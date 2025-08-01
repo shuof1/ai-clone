@@ -4,14 +4,14 @@ import React, { useEffect, useState } from 'react'
 import { supabase } from '../../../../services/supabase';
 import Header from './_components/Header'
 import DisplayResult from './_components/Displayresult'
-import { LucideSparkles } from 'lucide-react';
+import { LucideImage, LucideList, LucideSparkles, LucideVideo } from 'lucide-react';
 
 
 const tabs = [
     { label: 'Answer', inco: LucideSparkles},
-    { label: 'Images', inco: LucideSparkles},
-    { label: 'Videos', inco: LucideSparkles},
-    { label: 'Answer', inco: LucideSparkles},
+    { label: 'Images', inco: LucideImage},
+    { label: 'Videos', inco: LucideVideo},
+    { label: 'Sources', inco: LucideList, badge:10},
 ];
 
 function SearchQueryResult() {
