@@ -4,15 +4,10 @@ import React, { useEffect, useState } from 'react'
 import { supabase } from '../../../../services/supabase';
 import Header from './_components/Header'
 import DisplayResult from './_components/Displayresult'
-import { LucideImage, LucideList, LucideSparkles, LucideVideo } from 'lucide-react';
 
 
-const tabs = [
-    { label: 'Answer', inco: LucideSparkles},
-    { label: 'Images', inco: LucideImage},
-    { label: 'Videos', inco: LucideVideo},
-    { label: 'Sources', inco: LucideList, badge:10},
-];
+
+
 
 function SearchQueryResult() {
     const { libId } = useParams();
