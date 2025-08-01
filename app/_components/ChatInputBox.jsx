@@ -1,0 +1,107 @@
+"use client"
+import Image from 'next/image'
+import React, { useState } from 'react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
+import { ArrowRight, Atom, AudioLines, Cpu, Ghost, Globe, Mic, Paperclip, SearchCheck } from 'lucide-react'
+import { Button } from '../../components/ui/button'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "../../components/ui/dropdown-menu"
+import { AIModelsOptions } from '../../services/Shared'
+import { useUser } from '@clerk/nextjs'
+import { supabase } from '../../services/supabase'
+import { uuid } from 'uuidv4';
+import { useRouter } from 'next/navigation'
+
+
+
+function ChatInputBox() {
+
+    const [userSearchInput, setUserSearchInput]=useState();
+    const [searchType,setSearchType]=useState('search');
+    const {user}=useUser();
+    const [loading, setLoading]=useState(false);
+    const router=useRouter();
+    const onSearchQuery=async()=>{
+        setLoading(true);
+        const libId=uuid();
+        const data=await supabase.from('Library').insert([
+            {
+                searchInput:userSearchInput,
+                userEmail:user?.primaryEmailAddress?.emailAddress,
+                type:searchType,
+                libid:libId
+            }
+        ]).select();
+        console.log(data[0])
+        setLoading(false);
+        router.push('/search/'+libId)
+        //redirect to new screen
+    }
+    return (
+        <div className='flex flex-col items-center justify-center h-screen w-full'>
+            <Image src={'/logo.png'} alt='logo' width={200} height={200} />
+            <div className='p-2 w-full max-w-2xl border rounded-2xl mt-10'>
+
+                <div className='flex justify-between items-end'>
+                    <Tabs defaultValue="Search" className="w-[400px]">
+                        <TabsContent value="Search"><input type='text' placeholder='Ask Anything'
+                            onChange={(e)=>setUserSearchInput(e.target.value)}
+                            className='w-full p-4 outline-none' /></TabsContent>
+                        <TabsContent value="Research"><input type='text' placeholder='Reaserch Anything'
+                            onChange={(e)=>setUserSearchInput(e.target.value)}
+                            className='w-full p-4 outline-none' /></TabsContent>
+                        <TabsList>
+                            <TabsTrigger value="Search" className={'text-primary'} onClick={()=>setSearchType('search')}><SearchCheck />Search</TabsTrigger>
+                            <TabsTrigger value="Research" onClick={()=>setSearchType('research')}><Atom />Research</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                    <div className='flex gap-5 items-center'>
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild><Button variant='ghost'>
+                                <Cpu className='text-gray-500 h-5 w-5' />
+                            </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                {AIModelsOptions.map((model,index)=>(
+                                    <DropdownMenuItem key={index}>
+                                        <div className='mb-1'>
+                                            <h2>{model.name}</h2>
+                                            <p className='text-xs'>{model.desc}</p>
+                                        </div>
+                                    </DropdownMenuItem>
+                                ))}
+                                
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button variant='ghost'>
+                            <Globe className='text-gray-500 h-5 w-5' />
+                        </Button>
+                        <Button variant='ghost'>
+                            <Paperclip className='text-gray-500 h-5 w-5' />
+                        </Button>
+                        <Button variant='ghost'>
+                            <Mic className='text-gray-500 h-5 w-5' />
+                        </Button>
+                        <Button onClick={()=>{
+                            userSearchInput?onSearchQuery():null
+                        }}>
+                            {!userSearchInput?<AudioLines className='text-white h-5 w-5' />
+                            :<ArrowRight className='text-white h-5 w-5' disabled={loading}/>}
+                        </Button>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    )
+}
+
+export default ChatInputBox

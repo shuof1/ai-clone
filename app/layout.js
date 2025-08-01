@@ -1,6 +1,9 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
+import { Sidebar, SidebarProvider, SidebarTrigger } from "../components/ui/sidebar";
+import AppSidebar from "./_components/AppSidebar";
+import { ClerkProvider } from "@clerk/nextjs";
+import SupabaseUserSyncProvider from "./provider"
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -18,12 +21,24 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <ClerkProvider>
+    <html lang="en" className="w-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`w-full ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <SidebarProvider>
+          <AppSidebar />
+          <main className="w-full">
+            <SidebarTrigger/>
+            <SupabaseUserSyncProvider>
+              {children}
+            </SupabaseUserSyncProvider>
+            
+          </main>
+        
+        </SidebarProvider>
       </body>
     </html>
+    </ClerkProvider>
   );
 }
