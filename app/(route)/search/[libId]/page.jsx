@@ -12,14 +12,14 @@ import DisplayResult from './_components/Displayresult'
 function SearchQueryResult() {
     const { libId } = useParams();
     const [searchInputRecord,setSearchInputRecord]=useState();
-    console.log(libId);
+    // console.log(libId);
     useEffect(()=>{
         GetSearchQueryRecord()
     },[])
     const GetSearchQueryRecord = async()=>{
         let {data: Library,error} = await supabase.from('Library').select('*')
             .eq('libid',libId);
-        console.log(Library[0])
+        // console.log(Library[0])
         setSearchInputRecord(Library[0]);
     }
         

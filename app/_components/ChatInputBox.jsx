@@ -38,7 +38,7 @@ function ChatInputBox() {
                 libid:libId
             }
         ]).select();
-        console.log(data[0])
+        // console.log(data[0])
         setLoading(false);
         router.push('/search/'+libId)
         //redirect to new screen

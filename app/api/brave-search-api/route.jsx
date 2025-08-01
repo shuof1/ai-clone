@@ -12,7 +12,7 @@ export async function POST(req) {
             'X-Subscription-Token': process.env.BRAVE_API_KEY
         }
     });
-    console.log(result.data);
+    // console.log(result.data);
     return NextResponse.json(result.data)
     }else{
         return NextResponse.json("please pass search query")

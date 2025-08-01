@@ -19,7 +19,7 @@ function SupabaseUserSyncProvider({ children }) {
             .eq('email', user?.primaryEmailAddress.emailAddress);
 
         
-        console.log(Users)
+        // console.log(Users)
         if (Users.length == 0) {
             const { data, error } = await supabase
                 .from('Users')
