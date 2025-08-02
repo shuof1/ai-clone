@@ -17,7 +17,7 @@ const tabs = [
 function Displayresult({ searchInputRecord }) {
     const [activeTab, setActiveTab] = useState('Answer')
     const [searchResult, setSearchResult] = useState(searchRes)
-    const {libId}=useParams();
+    const { libId } = useParams();
     useEffect(() => {
         //update this method
         searchInputRecord && GetSearchApiResult();
@@ -49,15 +49,27 @@ function Displayresult({ searchInputRecord }) {
 
         const { data, error } = await supabase
             .from('Chats')
-            .insert([
-                { 
-                    libid:libId,
-                    searchResult:formattedSearchResp
+            .upsert(
+                {
+                    libid: libId,
+                    searchResult: formattedSearchResp
                 },
-            ])
-            .select()
-        console.log(data);
+                { onConflict: ['libid'] } // 👈 以 libid 判断冲突
+            )
+            .select();
+        // console.log(data);
 
+        //pass to LLM Model
+        await GenerateAIResp(formattedSearchResp, data[0].id)
+
+    }
+    const GenerateAIResp = async (formattedSearchResp, recordId) => {
+        const result = await axios.post('/api/llm-model', {
+            searchInput: searchInputRecord?.searchInput,
+            searchResult: formattedSearchResp,
+            recordId: recordId
+        })
+        console.log(result.data)
     }
     return (
         <div className='mt-7'>
