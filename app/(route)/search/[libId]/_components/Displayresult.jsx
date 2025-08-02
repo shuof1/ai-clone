@@ -19,14 +19,24 @@ function Displayresult({ searchInputRecord }) {
     const [searchResult, setSearchResult] = useState(searchRes)
     const { libId } = useParams();
     useEffect(() => {
-        //update this method
+        //update this method:=> only search when chat table is empty 
         searchInputRecord && GetSearchApiResult();
+        // searchInputRecord?.Chats?.length==0 && GetSearchApiResult();
+        setSearchResult(searchInputRecord)
+        console.log(searchInputRecord)
+        // if (searchInputRecord?.Chats?.length > 0) {
+        //     setSearchResult(searchInputRecord.Chats[0].searchResult)
+        // } else {
+        //     GetSearchApiResult();
+        // }
     }, [searchInputRecord])
     const GetSearchApiResult = async () => {
         // const result=await axios.post('/api/brave-search-api',{
         //     searchInput:searchInputRecord?.searchInput,
         //     searchType:searchInputRecord?.type
         // });
+        // console.log(JSON.stringify(result.data))
+        // console.log("result.data from axios.post /api/brave-search-api:", result.data)
         // console.log(result.data);
         // console.log(JSON.stringify(result.data));
 
@@ -70,6 +80,19 @@ function Displayresult({ searchInputRecord }) {
             recordId: recordId
         })
         console.log(result.data)
+        const runId = result.data
+        const interval = setInterval(async () => {
+            const runResp = await axios.post('/api/get-inngest-status', {
+                runId: runId
+            });
+            // console.log(runResp.data);
+            if (runResp?.data?.data[0]?.status == 'Completed') {
+                console.log('completed!!!')
+                clearInterval(interval)
+                //get undated data from DB
+            }
+        }, 1000)
+
     }
     return (
         <div className='mt-7'>

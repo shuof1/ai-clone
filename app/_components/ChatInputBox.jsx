@@ -15,7 +15,7 @@ import {
 import { AIModelsOptions } from '../../services/Shared'
 import { useUser } from '@clerk/nextjs'
 import { supabase } from '../../services/supabase'
-import { uuid } from 'uuidv4';
+import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/navigation'
 
 
@@ -29,7 +29,7 @@ function ChatInputBox() {
     const router=useRouter();
     const onSearchQuery=async()=>{
         setLoading(true);
-        const libId=uuid();
+        const libId=uuidv4();
         const data=await supabase.from('Library').insert([
             {
                 searchInput:userSearchInput,
