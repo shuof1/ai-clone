@@ -21,7 +21,7 @@ function Displayresult({ searchInputRecord }) {
     useEffect(() => {
         //update this method:=> only search when chat table is empty 
         console.log('handleing searchInputRecord');
-        
+
         // searchInputRecord && GetSearchApiResult();
         console.log(searchInputRecord);
         !searchInputRecord?.Chats && GetSearchApiResult();
@@ -79,7 +79,7 @@ function Displayresult({ searchInputRecord }) {
             )
             .select();
         // console.log(data);
-            // console.log(searchResult);
+        // console.log(searchResult);
         //pass to LLM Model
         await GenerateAIResp(formattedSearchResp, data[0].id)
 
@@ -101,7 +101,20 @@ function Displayresult({ searchInputRecord }) {
                 console.log('completed!!!')
                 clearInterval(interval)
                 //get undated data from DB
+                const { data: newData, error } = await supabase
+                    .from('Library')
+                    .select('*, Chats(*)')
+                    .eq('libid', libId);
+
+                if (newData && newData[0]) {
+                    // 合并新的 aiResp 到当前 searchResult
+                    setSearchResult(prev => ({
+                        ...prev,
+                        Chats: newData[0].Chats  // 替换/补充 Chats 字段
+                    }));
+                }
             }
+
         }, 1000)
 
         // setSearchResult(searchResp)

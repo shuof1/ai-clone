@@ -16,7 +16,7 @@ export const llmModel = inngest.createFunction(
   async ({ event, step }) => {
     const aiResp = await step.ai.infer('generate-ai-llm-model-call', {
       model: step.ai.models.gemini({
-        model:'gemini-2.0-flash',
+        model: 'gemini-2.0-flash',
         apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY
       }),
       body: {
@@ -34,8 +34,20 @@ export const llmModel = inngest.createFunction(
             role: 'user',
             parts: [
               {
-                text: 'Depends on user input sources, Summerize and search about topic, Give me a markdown text proper formatting. User input is:'
-                  + event.data.searchInput+'sources:'+JSON.stringify(event.data.searchResult)
+                text: `
+You are a helpful assistant. Given the following user input and web search sources, generate a well-formatted **Markdown summary** of the topic.
+
+### Instructions:
+- Use markdown syntax (## headings, **bold**, *italic*, lists)
+- Be concise and structured
+- Provide a readable and informative summary
+
+User input:
+${event.data.searchInput}
+
+Search sources:
+${JSON.stringify(event.data.searchResult, null, 2)}
+`
               }
             ]
           }
@@ -47,7 +59,7 @@ export const llmModel = inngest.createFunction(
       console.log(aiResp);
       const { data, error } = await supabase
         .from('Chats')
-        .update({ aiResp: aiResp?.candidates[0].content.parts[0]})
+        .update({ aiResp: aiResp?.candidates[0].content.parts[0] })
         .eq('id', event.data.recordId)
         .select()
       return aiResp;
