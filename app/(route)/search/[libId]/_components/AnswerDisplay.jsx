@@ -5,10 +5,10 @@ import DisplaySummery from './DisplaySummery'
 
 function AnswerDisplay({ searchResult }) {
   const webResult = searchResult?.web?.results;
-  console.log(searchResult);
+  // console.log(searchResult);
   const parsedAiResp = typeof searchResult?.Chats?.aiResp === 'string'
     ? JSON.parse(searchResult.Chats.aiResp)
-    : searchResult.Chats.aiResp;
+    : searchResult?.Chats?.aiResp;
   return (
     <div>
       <SourceList webResult={webResult}></SourceList>

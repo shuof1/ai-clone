@@ -1,11 +1,13 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import { LucideImage, LucideList, LucideSparkles, LucideVideo } from 'lucide-react';
+import { Loader2Icon, LucideImage, LucideList, LucideSparkles, LucideVideo, Send } from 'lucide-react';
 import AnswerDisplay from './AnswerDisplay'
+import ImageListTab from './ImageListTab'
 import axios from 'axios';
 // import { searchRes } from '../../../../../services/Shared'
 import { useParams } from 'next/navigation';
 import { supabase } from '../../../../../services/supabase'
+import { Button } from '@/components/ui/button';
 
 const tabs = [
     { label: 'Answer', icon: LucideSparkles },
@@ -17,6 +19,8 @@ const tabs = [
 function Displayresult({ searchInputRecord }) {
     const [activeTab, setActiveTab] = useState('Answer')
     const [searchResult, setSearchResult] = useState(searchInputRecord)
+    const [UserInput, setUserInput] = useState()
+    const [loadingSearch, setloadingSearch] = useState(false)
     const { libId } = useParams();
     useEffect(() => {
         //update this method:=> only search when chat table is empty 
@@ -25,7 +29,7 @@ function Displayresult({ searchInputRecord }) {
         // searchInputRecord && GetSearchApiResult();
         console.log(searchInputRecord);
         !searchInputRecord?.Chats && GetSearchApiResult();
-
+        // searchInputRecord?.Chats?.length == 0 ? GetSearchApiResult() : GetSearchRecord();
         setSearchResult(searchInputRecord)
 
         // console.log(searchInputRecord);
@@ -34,10 +38,11 @@ function Displayresult({ searchInputRecord }) {
         // }
     }, [searchInputRecord])
     const GetSearchApiResult = async () => {
+        setloadingSearch(true)
         console.log('handleing GetSearchApiResult');
         const result = await axios.post('/api/brave-search-api', {
-            searchInput: searchInputRecord?.searchInput,
-            searchType: searchInputRecord?.type
+            searchInput: UserInput??searchInputRecord?.searchInput,
+            searchType: searchInputRecord?.type??'Search'
         });
         // console.log(JSON.stringify(result.data))
         // console.log("result.data from axios.post /api/brave-search-api:", result.data)
@@ -69,19 +74,35 @@ function Displayresult({ searchInputRecord }) {
 
         const { data, error } = await supabase
             .from('Chats')
-            .upsert(
+            .insert(
                 {
                     libid: libId,
                     searchResult: formattedSearchResp,
                     userSearchInput: searchInputRecord?.searchInput
                 },
-                { onConflict: ['libid'] } // 👈 以 libid 判断冲突
+                // { onConflict: ['libid'] } // 👈 以 libid 判断冲突
             )
             .select();
         // console.log(data);
         // console.log(searchResult);
         //pass to LLM Model
+        setloadingSearch(false)
         await GenerateAIResp(formattedSearchResp, data[0].id)
+
+    }
+    const GetSearchRecord = async () => {
+        const { data: newData, error } = await supabase
+            .from('Library')
+            .select('*, Chats(*)')
+            .eq('libid', libId);
+
+        if (newData && newData[0]) {
+            // 合并新的 aiResp 到当前 searchResult
+            setSearchResult(prev => ({
+                ...prev,
+                Chats: newData[0].Chats  // 替换/补充 Chats 字段
+            }));
+        }
 
     }
     const GenerateAIResp = async (formattedSearchResp, recordId) => {
@@ -151,9 +172,19 @@ function Displayresult({ searchInputRecord }) {
             </div>
             <div>
                 {activeTab == 'Answer' ?
-                    <AnswerDisplay searchResult={searchResult} /> : null}
+                    <AnswerDisplay searchResult={searchResult} /> :
+                    activeTab == 'Images' ?
+                        <ImageListTab searchResult={searchResult} /> :
+                        null}
             </div>
-
+            <div className='bg-white w-full border rounded-lg 
+            shadow-md p-3 px-5 flex justify-between fiexd bottom-6 max-w-md lg:max-w-xl'>
+                <input placeholder="Type Anything" className='outline-none'
+                    onChange={(e) => setUserInput(e.target.value)} />
+                {UserInput?.length &&
+                    <Button onClick={GetSearchApiResult} >
+                        {loadingSearch ? <Loader2Icon className='animate-spin' /> : <Send />}</Button>}
+            </div>
         </div>
     )
 }
