@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { LucideImage, LucideList, LucideSparkles, LucideVideo } from 'lucide-react';
 import AnswerDisplay from './AnswerDisplay'
 import axios from 'axios';
-import { searchRes } from '../../../../../services/Shared'
+// import { searchRes } from '../../../../../services/Shared'
 import { useParams } from 'next/navigation';
 import { supabase } from '../../../../../services/supabase'
 
@@ -16,33 +16,43 @@ const tabs = [
 
 function Displayresult({ searchInputRecord }) {
     const [activeTab, setActiveTab] = useState('Answer')
-    const [searchResult, setSearchResult] = useState(searchRes)
+    const [searchResult, setSearchResult] = useState(searchInputRecord)
     const { libId } = useParams();
     useEffect(() => {
         //update this method:=> only search when chat table is empty 
-        searchInputRecord && GetSearchApiResult();
-        // searchInputRecord?.Chats?.length==0 && GetSearchApiResult();
+        console.log('handleing searchInputRecord');
+        
+        // searchInputRecord && GetSearchApiResult();
+        console.log(searchInputRecord);
+        !searchInputRecord?.Chats && GetSearchApiResult();
+
         setSearchResult(searchInputRecord)
-        console.log(searchInputRecord)
-        // if (searchInputRecord?.Chats?.length > 0) {
-        //     setSearchResult(searchInputRecord.Chats[0].searchResult)
-        // } else {
-        //     GetSearchApiResult();
+
+        // console.log(searchInputRecord);
+        // if (searchInputRecord?.searchInput) {
+        // GetSearchApiResult();
         // }
     }, [searchInputRecord])
     const GetSearchApiResult = async () => {
-        // const result=await axios.post('/api/brave-search-api',{
-        //     searchInput:searchInputRecord?.searchInput,
-        //     searchType:searchInputRecord?.type
-        // });
+        console.log('handleing GetSearchApiResult');
+        const result = await axios.post('/api/brave-search-api', {
+            searchInput: searchInputRecord?.searchInput,
+            searchType: searchInputRecord?.type
+        });
         // console.log(JSON.stringify(result.data))
         // console.log("result.data from axios.post /api/brave-search-api:", result.data)
         // console.log(result.data);
         // console.log(JSON.stringify(result.data));
 
         //save to DB
-        // const searchResp=result.data;
-        const searchResp = searchRes;
+        const searchResp = result.data;
+        setSearchResult({
+            ...searchInputRecord,
+            ...searchResp  // Brave 返回的 web、sources 等
+        });
+        // setSearchResult(searchResp)
+        // console.log(searchResult);
+        // const searchResp = searchRes;
         const formattedSearchResp = searchResp?.web?.results?.map((item, index) => (
             {
                 title: item?.title,
@@ -62,13 +72,14 @@ function Displayresult({ searchInputRecord }) {
             .upsert(
                 {
                     libid: libId,
-                    searchResult: formattedSearchResp
+                    searchResult: formattedSearchResp,
+                    userSearchInput: searchInputRecord?.searchInput
                 },
                 { onConflict: ['libid'] } // 👈 以 libid 判断冲突
             )
             .select();
         // console.log(data);
-
+            // console.log(searchResult);
         //pass to LLM Model
         await GenerateAIResp(formattedSearchResp, data[0].id)
 
@@ -79,7 +90,7 @@ function Displayresult({ searchInputRecord }) {
             searchResult: formattedSearchResp,
             recordId: recordId
         })
-        console.log(result.data)
+        // console.log(result.data);
         const runId = result.data
         const interval = setInterval(async () => {
             const runResp = await axios.post('/api/get-inngest-status', {
@@ -92,6 +103,10 @@ function Displayresult({ searchInputRecord }) {
                 //get undated data from DB
             }
         }, 1000)
+
+        // setSearchResult(searchResp)
+        // setSearchResult(searchInputRecord)
+        // console.log(searchResult);
 
     }
     return (
@@ -125,6 +140,7 @@ function Displayresult({ searchInputRecord }) {
                 {activeTab == 'Answer' ?
                     <AnswerDisplay searchResult={searchResult} /> : null}
             </div>
+
         </div>
     )
 }

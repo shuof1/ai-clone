@@ -6,10 +6,7 @@ export async function POST(req) {
         console.log("🟡 Received POST /api/llm-model with body:", body);
 
         const { searchInput, searchResult, recordId } = body;
-        if (!searchInput || !searchResult || !recordId) {
-            console.error("❌ Missing required fields", { searchInput, searchResult, recordId });
-            return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-        }
+       
         const inngestRunId = await inngest.send({
             name: "llm-model",
             data: {
