@@ -1,7 +1,7 @@
 import React from 'react'
 import Image from 'next/image';
 function SourceList({webResult}) {
-  console.log('webResult:  ')
+  // console.log('webResult:  ')
   // console.log(webResult)
   return (
     <div className='flex gap-2 flex-wrap mt-5'>

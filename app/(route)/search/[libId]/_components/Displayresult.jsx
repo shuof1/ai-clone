@@ -25,7 +25,7 @@ function Displayresult({ searchInputRecord }) {
     const { libId } = useParams();
     useEffect(() => {
         //update this method:=> only search when chat table is empty 
-        console.log('handleing searchInputRecord');
+        // console.log('handleing searchInputRecord');
 
         // searchInputRecord && GetSearchApiResult();
         // console.log(searchInputRecord);
@@ -45,7 +45,7 @@ function Displayresult({ searchInputRecord }) {
     const GetSearchApiResult = async () => {
         setHasUserTriggered(true); 
         setloadingSearch(true)
-        console.log('handleing GetSearchApiResult');
+        // console.log('handleing GetSearchApiResult');
         const result = await axios.post('/api/brave-search-api', {
             searchInput: UserInput ?? searchInputRecord?.searchInput,
             searchType: searchInputRecord?.type ?? 'Search'
