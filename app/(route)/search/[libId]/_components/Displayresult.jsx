@@ -4,12 +4,9 @@ import { Loader2Icon, LucideImage, LucideList, LucideSparkles, LucideVideo, Send
 import AnswerDisplay from './AnswerDisplay'
 import ImageListTab from './ImageListTab'
 import axios from 'axios';
-// import { searchRes } from '../../../../../services/Shared'
 import { useParams } from 'next/navigation';
 import { supabase } from '../../../../../services/supabase'
 import { Button } from '@/components/ui/button';
-
-import OpenAI from 'openai';
 
 const tabs = [
     { label: 'Answer', icon: LucideSparkles },
@@ -26,12 +23,7 @@ function Displayresult({ searchInputRecord }) {
     const [loadingSearch, setloadingSearch] = useState(false)
     const { libId } = useParams();
     useEffect(() => {
-        //update this method:=> only search when chat table is empty 
-        // console.log('handleing searchInputRecord');
 
-        // searchInputRecord && GetSearchApiResult();
-        // console.log(searchInputRecord);
-        // !searchInputRecord?.Chats && GetSearchApiResult();
         if (!hasUserTriggered && searchInputRecord?.Chats?.length === 0) {
             GetSearchApiResult();
         } else {
@@ -39,32 +31,24 @@ function Displayresult({ searchInputRecord }) {
         }
         setSearchResult(searchInputRecord)
 
-        // console.log(searchInputRecord);
-        // if (searchInputRecord?.searchInput) {
-        // GetSearchApiResult();
-        // }
     }, [searchInputRecord])
+
     const GetSearchApiResult = async () => {
         setHasUserTriggered(true);
         setloadingSearch(true)
-        // console.log('handleing GetSearchApiResult');
         const result = await axios.post('/api/brave-search-api', {
             searchInput: UserInput ?? searchInputRecord?.searchInput,
             searchType: searchInputRecord?.type ?? 'Search'
         });
         console.log(result.data);
-        const openai = new OpenAI({
-            apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-            dangerouslyAllowBrowser: true
-        });
 
         //save to DB
         const searchResp = result.data;
         setSearchResult({
             ...searchInputRecord,
-            ...searchResp  
+            ...searchResp
         });
-        
+
         const formattedSearchResp = searchResp?.web?.results?.map((item, index) => (
             {
                 title: item?.title,
@@ -75,10 +59,9 @@ function Displayresult({ searchInputRecord }) {
                 thumbnail: item?.thumbnail?.src
             }
         ))
-        // console.log(formattedSearchResp);
+
 
         //fetch latest from DB
-
         const { data, error } = await supabase
             .from('Chats')
             .insert(
@@ -91,62 +74,16 @@ function Displayresult({ searchInputRecord }) {
             )
             .select();
 
-        //pass to LLM Model
-
-        const formatted = searchResp?.web?.results?.map((item) => ({
-            content: `${item?.title ?? ''}\n${item?.description ?? ''}`,
-            url: item?.url,
-        }));
-
-        for (const item of formatted) {
-            if (!item.content) continue;
-
-            try {
-                const embeddingResp = await openai.embeddings.create({
-                    input: item.content,
-                    model: "text-embedding-3-small",
-                });
-
-                const [{ embedding }] = embeddingResp.data;
-
-                const { error } = await supabase.from("semantic_results").insert({
-                    libid: libId,
-                    content: item.content,
-                    url: item.url,
-                    embedding,
-                });
-
-                if (error) {
-                    console.error("Insert error:", error);
-                }
-            } catch (err) {
-                console.error("Embedding error:", err);
-            }
-        }
-
-        // 1. input embedding
-        const input = await openai.embeddings.create({
-            input: searchInputRecord?.searchInput,
-            model: "text-embedding-3-small",
+        //RAG
+        const res = await axios.post('/api/semantic-embedding', {
+            searchInput: UserInput ?? searchInputRecord?.searchInput,
+            searchResults: searchResp?.web?.results,
+            libid: libId
         });
-        const [{ embedding }] = input.data;
-
-        // 2. invoke the Postgres custom RPC function
-        const { data: matches, e } = await supabase
-            .rpc("match_semantic_results", {
-                query_embedding: embedding,
-                match_threshold: 0.85, 
-                match_count: 6
-            });
-        if (e) {
-            console.error("Semantic match error:", e);
-        } else {
-            console.log("Top matching results:", matches);
-        }
-
 
         setloadingSearch(false)
-        await GenerateAIResp(matches, data[0].id)
+        //pass to LLM Model
+        await GenerateAIResp(res, data[0].id)
 
     }
     const GetSearchRecord = async () => {
