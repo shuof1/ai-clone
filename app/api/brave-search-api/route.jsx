@@ -6,7 +6,7 @@ export async function POST(req) {
  
 
   try {
-    const result=await axios.get('https://api.search.brave.com/res/v1/web/search?q='+searchInput+'&count=5',{
+    const result=await axios.get('https://api.search.brave.com/res/v1/web/search?q='+searchInput+'&count=10',{
         headers:{
             'Accept': 'application/json',
             'Accept-Encoding': 'gzip',

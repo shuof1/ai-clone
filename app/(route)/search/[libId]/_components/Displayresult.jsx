@@ -9,6 +9,8 @@ import { useParams } from 'next/navigation';
 import { supabase } from '../../../../../services/supabase'
 import { Button } from '@/components/ui/button';
 
+import OpenAI from 'openai';
+
 const tabs = [
     { label: 'Answer', icon: LucideSparkles },
     { label: 'Images', icon: LucideImage },
@@ -43,27 +45,26 @@ function Displayresult({ searchInputRecord }) {
         // }
     }, [searchInputRecord])
     const GetSearchApiResult = async () => {
-        setHasUserTriggered(true); 
+        setHasUserTriggered(true);
         setloadingSearch(true)
         // console.log('handleing GetSearchApiResult');
         const result = await axios.post('/api/brave-search-api', {
             searchInput: UserInput ?? searchInputRecord?.searchInput,
             searchType: searchInputRecord?.type ?? 'Search'
         });
-        // console.log(JSON.stringify(result.data))
-        // console.log("result.data from axios.post /api/brave-search-api:", result.data)
-        // console.log(result.data);
-        // console.log(JSON.stringify(result.data));
+        console.log(result.data);
+        const openai = new OpenAI({
+            apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+            dangerouslyAllowBrowser: true
+        });
 
         //save to DB
         const searchResp = result.data;
         setSearchResult({
             ...searchInputRecord,
-            ...searchResp  // Brave 返回的 web、sources 等
+            ...searchResp  
         });
-        // setSearchResult(searchResp)
-        // console.log(searchResult);
-        // const searchResp = searchRes;
+        
         const formattedSearchResp = searchResp?.web?.results?.map((item, index) => (
             {
                 title: item?.title,
@@ -86,14 +87,66 @@ function Displayresult({ searchInputRecord }) {
                     searchResult: formattedSearchResp,
                     userSearchInput: searchInputRecord?.searchInput
                 },
-                // { onConflict: ['libid'] } // 👈 以 libid 判断冲突
+
             )
             .select();
-        // console.log(data);
-        // console.log(searchResult);
+
         //pass to LLM Model
+
+        const formatted = searchResp?.web?.results?.map((item) => ({
+            content: `${item?.title ?? ''}\n${item?.description ?? ''}`,
+            url: item?.url,
+        }));
+
+        for (const item of formatted) {
+            if (!item.content) continue;
+
+            try {
+                const embeddingResp = await openai.embeddings.create({
+                    input: item.content,
+                    model: "text-embedding-3-small",
+                });
+
+                const [{ embedding }] = embeddingResp.data;
+
+                const { error } = await supabase.from("semantic_results").insert({
+                    libid: libId,
+                    content: item.content,
+                    url: item.url,
+                    embedding,
+                });
+
+                if (error) {
+                    console.error("Insert error:", error);
+                }
+            } catch (err) {
+                console.error("Embedding error:", err);
+            }
+        }
+
+        // 1. input embedding
+        const input = await openai.embeddings.create({
+            input: searchInputRecord?.searchInput,
+            model: "text-embedding-3-small",
+        });
+        const [{ embedding }] = input.data;
+
+        // 2. invoke the Postgres custom RPC function
+        const { data: matches, e } = await supabase
+            .rpc("match_semantic_results", {
+                query_embedding: embedding,
+                match_threshold: 0.85, 
+                match_count: 6
+            });
+        if (e) {
+            console.error("Semantic match error:", e);
+        } else {
+            console.log("Top matching results:", matches);
+        }
+
+
         setloadingSearch(false)
-        await GenerateAIResp(formattedSearchResp, data[0].id)
+        await GenerateAIResp(matches, data[0].id)
 
     }
     const GetSearchRecord = async () => {
