@@ -3,15 +3,15 @@ import React from 'react'
 import SourceList from './SourceList'
 import DisplaySummery from './DisplaySummery'
 
-function AnswerDisplay({ searchResult }) {
-  const webResult = searchResult?.web?.results;
+function AnswerDisplay({ chat }) {
+  // const webResult = searchResult?.web?.results;
   // console.log(searchResult);
-  const parsedAiResp = typeof searchResult?.Chats?.aiResp === 'string'
-    ? JSON.parse(searchResult.Chats.aiResp)
-    : searchResult?.Chats?.aiResp;
+  const parsedAiResp = typeof chat?.aiResp === 'string'
+    ? JSON.parse(chat.aiResp)
+    : chat?.aiResp;
   return (
     <div>
-      <SourceList webResult={webResult}></SourceList>
+      <SourceList webResult={chat?.searchResult}></SourceList>
       <DisplaySummery markdownText={parsedAiResp?.text}></DisplaySummery>
     </div>
   )

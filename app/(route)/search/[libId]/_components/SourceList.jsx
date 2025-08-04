@@ -1,6 +1,8 @@
 import React from 'react'
 import Image from 'next/image';
 function SourceList({webResult}) {
+  console.log('webResult:  ')
+  // console.log(webResult)
   return (
     <div className='flex gap-2 flex-wrap mt-5'>
         {webResult?.map((item,index)=>(       
@@ -8,11 +10,11 @@ function SourceList({webResult}) {
                   w-[200px] cursor-pointer hover:bg-[#e1e3da]'
                   onClick={()=>window.open(item.url, '_blank')}>
                     <div className='flex gap-2 items-center'>
-                        <Image src={item?.profile?.img}
-                        alt={item.profile.name}
+                        <Image src={item?.img}
+                        alt={item?.name}
                         width={20}
                         height={20}/>
-                        <h2 className='text-xs'>{item?.profile?.long_name}</h2>
+                        <h2 className='text-xs'>{item?.long_name}</h2>
                     </div>
                     <h2 className='line-clamp-2 text-black text-xs'>{item?.description}</h2>
                   </div>

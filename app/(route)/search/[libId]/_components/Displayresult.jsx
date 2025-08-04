@@ -17,6 +17,7 @@ const tabs = [
 ];
 
 function Displayresult({ searchInputRecord }) {
+    const [hasUserTriggered, setHasUserTriggered] = useState(false);
     const [activeTab, setActiveTab] = useState('Answer')
     const [searchResult, setSearchResult] = useState(searchInputRecord)
     const [UserInput, setUserInput] = useState()
@@ -27,9 +28,13 @@ function Displayresult({ searchInputRecord }) {
         console.log('handleing searchInputRecord');
 
         // searchInputRecord && GetSearchApiResult();
-        console.log(searchInputRecord);
-        !searchInputRecord?.Chats && GetSearchApiResult();
-        // searchInputRecord?.Chats?.length == 0 ? GetSearchApiResult() : GetSearchRecord();
+        // console.log(searchInputRecord);
+        // !searchInputRecord?.Chats && GetSearchApiResult();
+        if (!hasUserTriggered && searchInputRecord?.Chats?.length === 0) {
+            GetSearchApiResult();
+        } else {
+            GetSearchRecord();
+        }
         setSearchResult(searchInputRecord)
 
         // console.log(searchInputRecord);
@@ -38,11 +43,12 @@ function Displayresult({ searchInputRecord }) {
         // }
     }, [searchInputRecord])
     const GetSearchApiResult = async () => {
+        setHasUserTriggered(true); 
         setloadingSearch(true)
         console.log('handleing GetSearchApiResult');
         const result = await axios.post('/api/brave-search-api', {
-            searchInput: UserInput??searchInputRecord?.searchInput,
-            searchType: searchInputRecord?.type??'Search'
+            searchInput: UserInput ?? searchInputRecord?.searchInput,
+            searchType: searchInputRecord?.type ?? 'Search'
         });
         // console.log(JSON.stringify(result.data))
         // console.log("result.data from axios.post /api/brave-search-api:", result.data)
@@ -145,38 +151,44 @@ function Displayresult({ searchInputRecord }) {
     }
     return (
         <div className='mt-7'>
-            <h2 className='font-medium text-3xl line-clamp-2'>{searchInputRecord?.searchInput}</h2>
-            <div className="flex items-center space-x-6 border-b border-gray-200 pb-2 mt-6">
-                {tabs.map(({ label, icon: Icon, badge }) => (
-                    <button
-                        key={label}
-                        onClick={() => setActiveTab(label)}
-                        className={`flex items-center gap-1 relative text-sm font-medium text-gray-700 hover:text-black ${activeTab === label ? 'text-black' : ''
-                            }`}
-                    >
-                        <Icon className="w-4 h-4" />
-                        <span>{label}</span>
-                        {badge && (
-                            <span className="ml-1 text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                                {badge}
-                            </span>
-                        )}
-                        {activeTab === label && (
-                            <span className="absolute -bottom-2 left-0 w-full h-0.5 bg-black rounded"></span>
-                        )}
-                    </button>
-                ))}
-                <div className="ml-auto text-sm text-gray-500">
-                    1 task <span className="ml-1">↗</span>
+            {searchResult?.Chats?.map((chat, index) => (
+                <div key={index}>
+                    <h2 className='font-medium text-3xl line-clamp-2'>{chat?.searchInput}</h2>
+                    <div className="flex items-center space-x-6 border-b border-gray-200 pb-2 mt-6">
+                        {tabs.map(({ label, icon: Icon, badge }) => (
+                            <button
+                                key={label}
+                                onClick={() => setActiveTab(label)}
+                                className={`flex items-center gap-1 relative text-sm font-medium text-gray-700 hover:text-black ${activeTab === label ? 'text-black' : ''
+                                    }`}
+                            >
+                                <Icon className="w-4 h-4" />
+                                <span>{label}</span>
+                                {badge && (
+                                    <span className="ml-1 text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                        {badge}
+                                    </span>
+                                )}
+                                {activeTab === label && (
+                                    <span className="absolute -bottom-2 left-0 w-full h-0.5 bg-black rounded"></span>
+                                )}
+                            </button>
+                        ))}
+                        <div className="ml-auto text-sm text-gray-500">
+                            1 task <span className="ml-1">↗</span>
+                        </div>
+                    </div>
+                    <div>
+                        {activeTab == 'Answer' ?
+                            <AnswerDisplay chat={chat} /> :
+                            activeTab == 'Images' ?
+                                <ImageListTab chat={chat} /> :
+                                null}
+                    </div>
                 </div>
-            </div>
-            <div>
-                {activeTab == 'Answer' ?
-                    <AnswerDisplay searchResult={searchResult} /> :
-                    activeTab == 'Images' ?
-                        <ImageListTab searchResult={searchResult} /> :
-                        null}
-            </div>
+            ))}
+
+
             <div className='bg-white w-full border rounded-lg 
             shadow-md p-3 px-5 flex justify-between fiexd bottom-6 max-w-md lg:max-w-xl'>
                 <input placeholder="Type Anything" className='outline-none'
